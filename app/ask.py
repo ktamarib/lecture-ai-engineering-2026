@@ -14,8 +14,9 @@ import argparse
 
 from google import genai
 from google.genai import errors
+from google.genai import types
 
-from app.config import MODEL, api_error_message, get_api_key
+from app.config import MODEL, TEMPERATURE, api_error_message, get_api_key
 
 # 講座に固有の質問。正しい答えは data/glossary.json の homework-levels にある
 DEFAULT_QUESTION = "AIE2026の講座の宿題にある「3レベル」とは何ですか？"
@@ -23,7 +24,14 @@ DEFAULT_QUESTION = "AIE2026の講座の宿題にある「3レベル」とは何�
 
 def ask(question: str) -> str:
     client = genai.Client(api_key=get_api_key())
-    response = client.models.generate_content(model=MODEL, contents=question)
+    if TEMPERATURE is None:
+        response = client.models.generate_content(model=MODEL, contents=question)
+    else:
+        response = client.models.generate_content(
+            model=MODEL,
+            contents=question,
+            config=types.GenerateContentConfig(temperature=TEMPERATURE),
+        )
 
     usage = getattr(response, "usage_metadata", None)
     if usage is not None:
