@@ -43,6 +43,7 @@ agent.tool_plain(tools.search_glossary)
 agent.tool_plain(tools.get_lecture_summary)
 
 # TODO(第3回 演習): tools.py に make_quiz を作り、ここで登録しよう
+agent.tool_plain(tools.make_quiz)
 
 # 第5回: 使う MCP サーバーの設定ファイル。Claude Desktop や Cursor と同じ "mcpServers" 形式
 MCP_CONFIG = Path(__file__).resolve().parent / "mcp_servers.json"
@@ -105,7 +106,8 @@ def print_trace(result) -> None:
             if isinstance(part, ToolCallPart):
                 print(f"[tool call]   {part.tool_name}({part.args})")
             elif isinstance(part, ToolReturnPart):
-                print(f"[tool return] {part.tool_name} -> {str(part.content)[:120]}…")
+                print(f"[tool return] {part.tool_name} -> {str(part.content)}")
+                #print(f"[tool return] {part.tool_name} -> {str(part.content)[:120]}…")
     print(f"[usage] {result.usage}")
 
 
