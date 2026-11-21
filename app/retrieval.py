@@ -125,9 +125,13 @@ def open_index(path: Path):
 
 
 def search(query: str) -> list[dict]:
-    """質問を埋め込み、近いページを最大RAG_TOP_K件返す。"""
+    """質問を埋め込み、近いページと前後1ページの本文を最大RAG_TOP_K件返す。"""
     if not isinstance(query, str) or not query.strip():
         raise ValueError("検索語が空です。")
+    pages = load_pages(RAG_SOURCE)
+    neighbors = {page["page_id"]: (pages[index - 1] if index > 0 else None,
+                                   pages[index + 1] if index + 1 < len(pages) else None)
+                 for index, page in enumerate(pages)}
     with open_index(RAG_DB) as db:
         vector = embed_text(query.strip(), "RETRIEVAL_QUERY")
         rows = db.execute("""
@@ -135,7 +139,16 @@ def search(query: str) -> list[dict]:
                    vec_distance_cosine(embedding, ?) AS distance
             FROM chunks ORDER BY distance, page_id LIMIT ?
         """, (sqlite_vec.serialize_float32(vector), RAG_TOP_K))
-        return [dict(row) for row in rows]
+        results = []
+        for row in rows:
+            result = dict(row)
+            previous, following = neighbors.get(result["page_id"], (None, None))
+            result["previous_page"] = previous
+            result["next_page"] = following
+            result["previous_content"] = previous["content"] if previous else None
+            result["next_content"] = following["content"] if following else None
+            results.append(result)
+        return results
 
 
 def search_graph(query: str) -> dict:
